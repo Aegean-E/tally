@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "active_task": {
+    "task_id": "task-tally-bootstrap-v1",
+    "last_phase": "phase 4",
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1792390686.1598752,
+    "completed_at": 1792390690.7302673
+  },
+  "checkpoints": [
+    {
+      "task_id": "task-tally-bootstrap-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: dependency-free Python CLI expense ledger; package, storage, CLI and tests",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792390192.9712796,
+      "timestamp_str": "2026-10-19 09:09:52",
+      "impact_assessment": {
+        "why": "Bootstrap a complete, useful first project in the dedicated projects/ workspace",
+        "benefits": "Working add/list/summary expense tracker with atomic local JSON storage and a passing regression suite",
+        "risks": "contract: new CLI and on-disk schema; dependency: none (stdlib only); concurrency: advisory lock around read-modify-write; state: JSON ledger needs atomic write and backup",
+        "mitigation": "Document commands in README, one schema in storage module, <.lock> plus temp+fsync+replace and .bak, unit tests for every command and fault"
+      }
+    },
+    {
+      "task_id": "task-tally-bootstrap-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Implement package: models, atomic storage, ledger operations and CLI",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792390276.0881495,
+      "timestamp_str": "2026-10-19 09:11:16"
+    },
+    {
+      "task_id": "task-tally-bootstrap-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/3] Docs and memory: README, ADR-001, gitignore; prepare Phase 4 gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792390612.3262296,
+      "timestamp_str": "2026-10-19 09:16:52"
+    },
+    {
+      "task_id": "task-tally-bootstrap-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 passed: tests 25/25, hygiene, guidelines and secrets gates green; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792390686.1598752,
+      "timestamp_str": "2026-10-19 09:18:06"
+    },
+    {
+      "task_id": "task-tally-bootstrap-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-tally-bootstrap-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792390690.730269,
+      "timestamp_str": "2026-10-19 09:18:10"
+    }
+  ]
+}
