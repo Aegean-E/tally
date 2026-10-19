@@ -1,12 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-tally-durability-v1",
+    "task_id": "task-tally-edit-remove-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792432702.3338165,
-    "completed_at": 1792432763.307552
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792433156.6298876
   },
   "checkpoints": [
     {
@@ -98,6 +97,32 @@
       "status": "completed",
       "timestamp": 1792432763.3075533,
       "timestamp_str": "2026-10-19 20:59:23"
+    },
+    {
+      "task_id": "task-tally-edit-remove-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Models and ledger: parse_id plus Ledger.edit/remove, with failing-first unit tests for partial edits, missing ids and id reuse; [2/4] CLI: edit ID [--amount/--category/--note/--date] and remove ID, no-field and bad-id paths via the Error/Why/Fix triad, end-to-end tests; [3/4] README commands and examples, ADR-003, refreshed codebase map; [4/4] Phase 4 gates, commit-alone verification, push and task completion",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432851.7664394,
+      "timestamp_str": "2026-10-19 21:00:51",
+      "impact_assessment": {
+        "why": "Tally can only append, so correcting a mistake means hand-editing the one JSON file the atomic store protects; the next useful milestone is safe correction by the ids list already shows",
+        "benefits": "typos are fixed without touching JSON; ids stay stable and are never reused; edit and remove run under the same lock, backup and atomic replace as add",
+        "risks": "contract: two new commands and a new id parser, the ledger schema is unchanged; dependency: none; concurrency: edit and remove are read-modify-write operations under the existing lock; state: remove drops an entry from the live file while the previous version stays in .bak",
+        "mitigation": "failing-first unit and CLI tests for partial edits, missing ids, bad ids and no-field edits; every failure uses the triad; no schema migration; full gates plus commit-alone verification before push"
+      }
+    },
+    {
+      "task_id": "task-tally-edit-remove-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/4]-[3/4] complete: parse_id, Ledger.edit/remove under the existing lock, edit/remove CLI with triad failures, 18 new tests (47 total), README and ADR-003, map refreshed. Phase 4: tests 47/47; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792433156.6298876,
+      "timestamp_str": "2026-10-19 21:05:56"
     }
   ]
 }

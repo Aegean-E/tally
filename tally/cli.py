@@ -14,6 +14,7 @@ from tally.models import (
     normalize_note,
     parse_amount,
     parse_date,
+    parse_id,
 )
 from tally.storage import StateStore
 
@@ -43,6 +44,16 @@ def build_parser() -> argparse.ArgumentParser:
     listing.add_argument("--category", "-c", default=None, help="only this category")
 
     commands.add_parser("summary", help="show totals per category")
+
+    edit = commands.add_parser("edit", help="change fields of an existing expense")
+    edit.add_argument("expense_id", help="id shown by list")
+    edit.add_argument("--amount", "-a", default=None, help="new amount, e.g. 12.50")
+    edit.add_argument("--category", "-c", default=None, help="new category label")
+    edit.add_argument("--note", "-n", default=None, help="new note; an empty value clears it")
+    edit.add_argument("--date", "-d", default=None, help="new ISO date, e.g. 2026-10-19")
+
+    remove = commands.add_parser("remove", help="delete an expense by id")
+    remove.add_argument("expense_id", help="id shown by list")
     return parser
 
 
@@ -58,6 +69,32 @@ def run_add(ledger: Ledger, args: argparse.Namespace) -> None:
     print(
         f"Added #{expense.id}: {format_cents(expense.amount_cents)} "
         f"[{expense.category}] on {expense.spent_on}{note}"
+    )
+
+
+def run_edit(ledger: Ledger, args: argparse.Namespace) -> None:
+    """Apply the given fields and echo the updated expense."""
+    updated = ledger.edit(
+        parse_id(args.expense_id),
+        amount_cents=parse_amount(args.amount) if args.amount is not None else None,
+        category=normalize_category(args.category) if args.category is not None else None,
+        note=normalize_note(args.note) if args.note is not None else None,
+        spent_on=parse_date(args.date) if args.date is not None else None,
+    )
+    note = f"  {updated.note}" if updated.note else ""
+    print(
+        f"Updated #{updated.id}: {format_cents(updated.amount_cents)} "
+        f"[{updated.category}] on {updated.spent_on}{note}"
+    )
+
+
+def run_remove(ledger: Ledger, args: argparse.Namespace) -> None:
+    """Delete one expense and echo what was removed."""
+    removed = ledger.remove(parse_id(args.expense_id))
+    note = f"  {removed.note}" if removed.note else ""
+    print(
+        f"Removed #{removed.id}: {format_cents(removed.amount_cents)} "
+        f"[{removed.category}] on {removed.spent_on}{note}"
     )
 
 
@@ -95,6 +132,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if args.command == "add":
             run_add(ledger, args)
+        elif args.command == "edit":
+            run_edit(ledger, args)
+        elif args.command == "remove":
+            run_remove(ledger, args)
         elif args.command == "list":
             run_list(ledger, args)
         else:

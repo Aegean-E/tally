@@ -45,6 +45,90 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("No expenses recorded.", output)
 
+    def test_edit_updates_every_given_field(self):
+        self.run_cli(
+            "add", "12.50", "--category", "Food", "--note", "lunch", "--date", "2026-10-18"
+        )
+        code, output, _ = self.run_cli(
+            "edit", "1", "--amount", "9.99", "--category", "Travel",
+            "--note", "taxi", "--date", "2026-10-20",
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("Updated #1: 9.99 [travel] on 2026-10-20  taxi", output)
+
+        code, listing, _ = self.run_cli("list")
+        self.assertEqual(code, 0)
+        self.assertIn("travel", listing)
+        self.assertIn("taxi", listing)
+        self.assertIn("9.99", listing)
+
+        code, summary, _ = self.run_cli("summary")
+        self.assertEqual(code, 0)
+        self.assertIn("travel", summary)
+        self.assertIn("9.99", summary)
+        self.assertNotIn("food", summary)
+
+    def test_edit_can_clear_a_note(self):
+        self.run_cli("add", "12.50", "--note", "lunch")
+        code, _, _ = self.run_cli("edit", "1", "--note", "")
+        self.assertEqual(code, 0)
+        _, listing, _ = self.run_cli("list")
+        self.assertNotIn("lunch", listing)
+
+    def test_edit_without_fields_reports_why_and_fix(self):
+        self.run_cli("add", "12.50")
+        code, _, error = self.run_cli("edit", "1")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_edit_invalid_amount_reports_why_and_fix(self):
+        self.run_cli("add", "12.50")
+        code, _, error = self.run_cli("edit", "1", "--amount", "nope")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_edit_missing_id_reports_why_and_fix(self):
+        code, _, error = self.run_cli("edit", "99", "--amount", "1.00")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_remove_deletes_one_entry(self):
+        self.run_cli("add", "12.50", "--category", "food")
+        self.run_cli("add", "3.00", "--category", "transport")
+        code, output, _ = self.run_cli("remove", "1")
+        self.assertEqual(code, 0)
+        self.assertIn("Removed #1: 12.50 [food]", output)
+
+        code, listing, _ = self.run_cli("list")
+        self.assertEqual(code, 0)
+        self.assertNotIn("#1", listing)
+        self.assertIn("#2", listing)
+
+        code, summary, _ = self.run_cli("summary")
+        self.assertEqual(code, 0)
+        self.assertNotIn("food", summary)
+        self.assertIn("transport", summary)
+
+    def test_remove_bad_id_reports_why_and_fix(self):
+        code, _, error = self.run_cli("remove", "nope")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_remove_missing_id_reports_why_and_fix(self):
+        code, _, error = self.run_cli("remove", "99")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
     def test_invalid_amount_reports_why_and_fix(self):
         code, _, error = self.run_cli("add", "nope")
         self.assertEqual(code, 1)

@@ -129,3 +129,22 @@ def parse_date(text: str) -> str:
             "dates are stored as ISO-8601 so the ledger sorts correctly.",
             "pass a date such as '--date 2026-10-19'.",
         ) from exc
+
+
+def parse_id(text: str) -> int:
+    """Convert an expense id such as `3` to a positive integer."""
+    try:
+        value = int(text.strip())
+    except (AttributeError, ValueError) as exc:
+        raise TallyError(
+            f"'{text}' is not a valid expense id.",
+            "ids are the positive whole numbers shown beside each entry by `tally list`.",
+            "run `tally list`, then pass the number after '#', e.g. 'tally edit 3 --amount 9.99'.",
+        ) from exc
+    if value < 1:
+        raise TallyError(
+            f"Expense id '{text}' must be greater than zero.",
+            "ids start at 1 and are assigned one past the highest remaining id.",
+            "run `tally list` and pass the number after '#'.",
+        )
+    return value

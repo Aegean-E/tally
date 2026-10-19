@@ -15,6 +15,8 @@ and see where the money went. Everything stays in one readable JSON file on your
   python -m tally add 12.50 --category food --note lunch
   python -m tally add 3.00 --category transport
   python -m tally list
+  python -m tally edit 1 --amount 13.00
+  python -m tally remove 2
   python -m tally summary
   ```
 
@@ -31,6 +33,8 @@ and see where the money went. Everything stays in one readable JSON file on your
 
 - **Money is integer cents.** Amounts are parsed with `Decimal`, never floats, so totals stay exact.
 - **One ledger file.** `tally.json` (or `--db <path>`) holds `{"version": 1, "expenses": [...]}`.
+- **Stable ids.** `list` shows each id, and `edit` or `remove` takes it. A new id is one past the
+  highest remaining id, so deleting the newest entry frees that id for the next entry.
 - **Crash-safe writes.** Each save keeps a `.bak`, writes a temporary file, fsyncs it, then
   replaces the ledger atomically. A transient Windows sharing violation is retried; any other
   replace failure is reported at once. A failed backup or directory fsync prints a warning. A
@@ -43,6 +47,8 @@ and see where the money went. Everything stays in one readable JSON file on your
 
 ```text
 python -m tally [--db PATH] add AMOUNT [--category NAME] [--note TEXT] [--date YYYY-MM-DD]
+python -m tally [--db PATH] edit ID [--amount AMOUNT] [--category NAME] [--note TEXT] [--date YYYY-MM-DD]
+python -m tally [--db PATH] remove ID
 python -m tally [--db PATH] list [--category NAME]
 python -m tally [--db PATH] summary
 ```
@@ -60,7 +66,7 @@ tally/
 │   ├── __main__.py           <- `python -m tally`
 │   ├── cli.py                <- argument parsing and command output
 │   ├── errors.py             <- the Error/Why/Fix triad
-│   ├── ledger.py             <- add, list and per-category totals
+│   ├── ledger.py             <- add, edit, remove and read operations
 │   ├── models.py             <- Expense value object and parsing rules
 │   └── storage.py            <- atomic JSON store, backup, lock and recovery
 └── tests/

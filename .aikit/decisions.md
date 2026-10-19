@@ -36,3 +36,19 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   read-only failures surface immediately. A ledger can survive without a fresh backup or a
   directory barrier, but the operator sees the warning. The JSON schema, lock protocol and
   shutdown behaviour are unchanged.
+
+### ADR-003: Edit and remove by the id `list` shows
+- **Date**: 2026-10-19
+- **Status**: Accepted
+- **Context**: The bootstrap only appended. Correcting a typo or deleting a duplicate meant
+  hand-editing `tally.json`, the one file the atomic store and backup exist to protect.
+- **Decision**: Add `edit ID` and `remove ID`. `edit` changes any subset of `--amount`,
+  `--category`, `--note` and `--date`, and refuses a call with no field. Both commands run through
+  `StateStore.update`, so they hold the same lock, keep the same `.bak` and replace the ledger
+  atomically. A missing id fails with the Error/Why/Fix triad. New ids are one past the highest
+  remaining id, so deleting the newest entry frees its id for the next entry; every entry that
+  remains keeps its id.
+- **Consequences**: Mistakes are fixed without touching the JSON. The previous version stays in
+  `.bak` until the next write. Because ids are derived from the live file, an id is a handle to a
+  current entry, not a permanent historical key; a future schema that persists a counter would be
+  the migration path if permanent identity is needed.

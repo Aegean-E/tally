@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
-- **Total Classes**: `9`
-- **Total Top-Level Functions**: `10`
-- **Total Class Methods**: `56`
-- **Total Source Lines**: `812`
+- **Total Classes**: `10`
+- **Total Top-Level Functions**: `13`
+- **Total Class Methods**: `77`
+- **Total Source Lines**: `1084`
 
 ---
 
@@ -33,11 +33,13 @@
 ### [`tally/cli.py`](tally/cli.py)
 > *Command-line interface: `add`, `list` and `summary` over one ledger file.*
 
-**Size**: `105` lines (`3687` bytes)
+**Size**: `146` lines (`5597` bytes)
 
 **Functions:**
 - `def build_parser()` - *The command grammar; `--db` selects the ledger file for every command.*
 - `def run_add(ledger, args)` - *Validate the arguments, record the expense and echo it.*
+- `def run_edit(ledger, args)` - *Apply the given fields and echo the updated expense.*
+- `def run_remove(ledger, args)` - *Delete one expense and echo what was removed.*
 - `def run_list(ledger, args)` - *Print one line per expense, or say the ledger is empty.*
 - `def run_summary(ledger)` - *Print per-category totals and the grand total.*
 - `def main(argv)` - *Run one command; user errors print the Why/Fix triad and exit 1.*
@@ -59,12 +61,15 @@
 ### [`tally/ledger.py`](tally/ledger.py)
 > *Expense operations: the one place that assigns ids and computes category totals.*
 
-**Size**: `40` lines (`1694` bytes)
+**Size**: `98` lines (`4026` bytes)
 
 **Classes:**
 - `class Ledger` - *Add and read expenses through a `StateStore`; it owns no storage logic itself.*
   - Method `.__init__(store)`
   - Method `.add(amount_cents, category, note, spent_on)` - *Record one expense with the next free id.*
+  - Method `.edit(expense_id, amount_cents, category, note, spent_on)` - *Change the given fields of one expense, keeping every other field.*
+  - Method `.remove(expense_id)` - *Delete one expense and return it.*
+  - Method `._missing(expense_id)` - *The triad for an id the ledger does not contain.*
   - Method `.entries(category)` - *Every expense, oldest first, optionally narrowed to one normalized category.*
   - Method `.summary()` - *Total cents per category, with categories in alphabetical order.*
   - Method `.total()` - *Total cents across every category.*
@@ -74,7 +79,7 @@
 ### [`tally/models.py`](tally/models.py)
 > *Expense value objects and money/date parsing shared by storage and the CLI.*
 
-**Size**: `131` lines (`4778` bytes)
+**Size**: `150` lines (`5537` bytes)
 
 **Classes:**
 - `class Expense` - *One recorded expense; money is integer cents so no float rounding can drift.*
@@ -87,6 +92,7 @@
 - `def normalize_category(text)` - *Trim and lowercase a category, refusing empty or oversized values.*
 - `def normalize_note(text)` - *Trim a note and refuse one that would dwarf a ledger line.*
 - `def parse_date(text)` - *Validate an ISO date and return it unchanged, so stored dates sort lexically.*
+- `def parse_id(text)` - *Convert an expense id such as `3` to a positive integer.*
 
 ---
 
@@ -123,7 +129,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *End-to-end tests of the command-line interface through `main`.*
 
-**Size**: `62` lines (`2103` bytes)
+**Size**: `146` lines (`5309` bytes)
 
 **Classes:**
 - `class CliTests`
@@ -131,6 +137,14 @@
   - Method `.run_cli(*arguments)`
   - Method `.test_add_then_list_then_summary()`
   - Method `.test_list_on_empty_ledger()`
+  - Method `.test_edit_updates_every_given_field()`
+  - Method `.test_edit_can_clear_a_note()`
+  - Method `.test_edit_without_fields_reports_why_and_fix()`
+  - Method `.test_edit_invalid_amount_reports_why_and_fix()`
+  - Method `.test_edit_missing_id_reports_why_and_fix()`
+  - Method `.test_remove_deletes_one_entry()`
+  - Method `.test_remove_bad_id_reports_why_and_fix()`
+  - Method `.test_remove_missing_id_reports_why_and_fix()`
   - Method `.test_invalid_amount_reports_why_and_fix()`
   - Method `.test_missing_command_is_argument_misuse()`
 
@@ -139,7 +153,7 @@
 ### [`tests/test_ledger.py`](tests/test_ledger.py)
 > *Tests for the ledger operations on top of the state store.*
 
-**Size**: `50` lines (`2057` bytes)
+**Size**: `102` lines (`4495` bytes)
 
 **Classes:**
 - `class LedgerTests`
@@ -149,13 +163,21 @@
   - Method `.test_entries_filter_by_category()`
   - Method `.test_summary_totals_each_category()`
   - Method `.test_entries_survive_a_new_ledger_instance()`
+  - Method `.test_edit_changes_only_the_given_fields()`
+  - Method `.test_edit_can_clear_a_note()`
+  - Method `.test_edit_without_fields_is_refused()`
+  - Method `.test_edit_missing_id_changes_nothing()`
+  - Method `.test_edit_survives_a_new_ledger_instance()`
+  - Method `.test_remove_drops_only_the_named_id()`
+  - Method `.test_remove_missing_id_changes_nothing()`
+  - Method `.test_next_id_follows_the_highest_remaining_entry()`
 
 ---
 
 ### [`tests/test_models.py`](tests/test_models.py)
 > *Tests for money, date and category parsing.*
 
-**Size**: `54` lines (`1760` bytes)
+**Size**: `72` lines (`2175` bytes)
 
 **Classes:**
 - `class AmountTests`
@@ -164,6 +186,9 @@
   - Method `.test_rejects_fractions_of_a_cent()`
   - Method `.test_rejects_garbage()`
   - Method `.test_formats_cents_with_two_places()`
+- `class IdTests`
+  - Method `.test_parses_positive_ids()`
+  - Method `.test_rejects_text_and_non_positive_ids()`
 - `class LabelTests`
   - Method `.test_category_is_trimmed_and_lowercased()`
   - Method `.test_empty_category_is_refused()`

@@ -3,7 +3,14 @@
 import unittest
 
 from tally.errors import TallyError
-from tally.models import format_cents, normalize_category, normalize_note, parse_amount, parse_date
+from tally.models import (
+    format_cents,
+    normalize_category,
+    normalize_note,
+    parse_amount,
+    parse_date,
+    parse_id,
+)
 
 
 class AmountTests(unittest.TestCase):
@@ -29,6 +36,17 @@ class AmountTests(unittest.TestCase):
         self.assertEqual(format_cents(1250), "12.50")
         self.assertEqual(format_cents(5), "0.05")
         self.assertEqual(format_cents(-120), "-1.20")
+
+
+class IdTests(unittest.TestCase):
+    def test_parses_positive_ids(self):
+        self.assertEqual(parse_id("1"), 1)
+        self.assertEqual(parse_id(" 42 "), 42)
+
+    def test_rejects_text_and_non_positive_ids(self):
+        for text in ("", "abc", "0", "-3", "1.5"):
+            with self.subTest(text=text), self.assertRaises(TallyError):
+                parse_id(text)
 
 
 class LabelTests(unittest.TestCase):
