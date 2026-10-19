@@ -52,3 +52,18 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   `.bak` until the next write. Because ids are derived from the live file, an id is a handle to a
   current entry, not a permanent historical key; a future schema that persists a counter would be
   the migration path if permanent identity is needed.
+
+### ADR-004: Date range and month filtering for list and summary
+- **Date**: 2026-10-19
+- **Status**: Accepted
+- **Context**: `list` only allowed filtering by category, and `summary` always totaled all recorded
+  expenses across the lifetime of the ledger. Users need to inspect and summarize expenses for
+  specific periods, especially by month or custom date windows.
+- **Decision**: Add `--from YYYY-MM-DD`, `--to YYYY-MM-DD`, and `--month YYYY-MM` (`-m`) options
+  to both `list` and `summary`. `--month` resolves to inclusive start and end dates based on the
+  calendar month (handling leap years). Combining `--month` with `--from` or `--to`, or specifying
+  `--from` after `--to`, fails cleanly with the Error/Why/Fix triad. The stored ledger schema is
+  unchanged; filtering operates on ISO-8601 string bounds during retrieval.
+- **Consequences**: Users can analyze periodic spending without third-party tooling or spreadsheet
+  exports. Backward compatibility is fully preserved for callers invoking `entries()` or `summary()`
+  without date bounds.

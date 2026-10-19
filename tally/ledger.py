@@ -79,20 +79,37 @@ class Ledger:
             "run `tally list` to find the id, then retry.",
         )
 
-    def entries(self, category: Optional[str] = None) -> List[Expense]:
-        """Every expense, oldest first, optionally narrowed to one normalized category."""
+    def entries(
+        self,
+        category: Optional[str] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+    ) -> List[Expense]:
+        """Every expense, oldest first, optionally narrowed to one category or date range."""
         expenses = self._store.read()
         if category is not None:
             expenses = [expense for expense in expenses if expense.category == category]
+        if from_date is not None:
+            expenses = [expense for expense in expenses if expense.spent_on >= from_date]
+        if to_date is not None:
+            expenses = [expense for expense in expenses if expense.spent_on <= to_date]
         return sorted(expenses, key=lambda expense: (expense.spent_on, expense.id))
 
-    def summary(self) -> Dict[str, int]:
+    def summary(
+        self,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+    ) -> Dict[str, int]:
         """Total cents per category, with categories in alphabetical order."""
         totals: Dict[str, int] = {}
-        for expense in self._store.read():
+        for expense in self.entries(from_date=from_date, to_date=to_date):
             totals[expense.category] = totals.get(expense.category, 0) + expense.amount_cents
         return dict(sorted(totals.items()))
 
-    def total(self) -> int:
-        """Total cents across every category."""
-        return sum(self.summary().values())
+    def total(
+        self,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+    ) -> int:
+        """Total cents across every category in the given date range."""
+        return sum(self.summary(from_date=from_date, to_date=to_date).values())

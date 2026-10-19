@@ -10,6 +10,8 @@ from tally.models import (
     parse_amount,
     parse_date,
     parse_id,
+    parse_month,
+    resolve_date_range,
 )
 
 
@@ -66,6 +68,63 @@ class LabelTests(unittest.TestCase):
     def test_invalid_date_is_refused(self):
         with self.assertRaises(TallyError):
             parse_date("19/10/2026")
+
+
+class MonthTests(unittest.TestCase):
+    def test_parses_iso_month(self):
+        self.assertEqual(parse_month("2026-10"), "2026-10")
+        self.assertEqual(parse_month(" 2026-05 "), "2026-05")
+
+    def test_rejects_invalid_months(self):
+        for text in ("", "invalid", "2026-13", "2026-00", "2026-5", "oct-2026", "2026/10"):
+            with self.subTest(text=text), self.assertRaises(TallyError):
+                parse_month(text)
+
+
+class DateRangeTests(unittest.TestCase):
+    def test_resolve_date_range_month(self):
+        self.assertEqual(
+            resolve_date_range(None, None, "2026-02"),
+            ("2026-02-01", "2026-02-28"),
+        )
+        self.assertEqual(
+            resolve_date_range(None, None, "2024-02"),
+            ("2024-02-01", "2024-02-29"),
+        )
+        self.assertEqual(
+            resolve_date_range(None, None, "2026-10"),
+            ("2026-10-01", "2026-10-31"),
+        )
+
+    def test_resolve_date_range_from_to(self):
+        self.assertEqual(
+            resolve_date_range("2026-10-01", "2026-10-15", None),
+            ("2026-10-01", "2026-10-15"),
+        )
+        self.assertEqual(
+            resolve_date_range("2026-10-01", None, None),
+            ("2026-10-01", None),
+        )
+        self.assertEqual(
+            resolve_date_range(None, "2026-10-15", None),
+            (None, "2026-10-15"),
+        )
+        self.assertEqual(
+            resolve_date_range(None, None, None),
+            (None, None),
+        )
+
+    def test_resolve_date_range_from_after_to(self):
+        with self.assertRaises(TallyError):
+            resolve_date_range("2026-10-20", "2026-10-10", None)
+
+    def test_resolve_date_range_month_conflict(self):
+        with self.assertRaises(TallyError):
+            resolve_date_range("2026-10-01", None, "2026-10")
+        with self.assertRaises(TallyError):
+            resolve_date_range(None, "2026-10-31", "2026-10")
+        with self.assertRaises(TallyError):
+            resolve_date_range("2026-10-01", "2026-10-31", "2026-10")
 
 
 if __name__ == "__main__":

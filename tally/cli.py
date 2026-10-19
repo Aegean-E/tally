@@ -15,6 +15,7 @@ from tally.models import (
     parse_amount,
     parse_date,
     parse_id,
+    resolve_date_range,
 )
 from tally.storage import StateStore
 
@@ -42,8 +43,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     listing = commands.add_parser("list", help="list expenses, oldest first")
     listing.add_argument("--category", "-c", default=None, help="only this category")
+    listing.add_argument("--from", dest="from_date", default=None, help="start date (YYYY-MM-DD)")
+    listing.add_argument("--to", dest="to_date", default=None, help="end date (YYYY-MM-DD)")
+    listing.add_argument("--month", "-m", default=None, help="filter by month (YYYY-MM)")
 
-    commands.add_parser("summary", help="show totals per category")
+    summary = commands.add_parser("summary", help="show totals per category")
+    summary.add_argument("--from", dest="from_date", default=None, help="start date (YYYY-MM-DD)")
+    summary.add_argument("--to", dest="to_date", default=None, help="end date (YYYY-MM-DD)")
+    summary.add_argument("--month", "-m", default=None, help="filter by month (YYYY-MM)")
 
     edit = commands.add_parser("edit", help="change fields of an existing expense")
     edit.add_argument("expense_id", help="id shown by list")
@@ -101,7 +108,8 @@ def run_remove(ledger: Ledger, args: argparse.Namespace) -> None:
 def run_list(ledger: Ledger, args: argparse.Namespace) -> None:
     """Print one line per expense, or say the ledger is empty."""
     category = normalize_category(args.category) if args.category else None
-    expenses = ledger.entries(category)
+    from_date, to_date = resolve_date_range(args.from_date, args.to_date, args.month)
+    expenses = ledger.entries(category=category, from_date=from_date, to_date=to_date)
     if not expenses:
         print("No expenses recorded.")
         return
@@ -113,9 +121,10 @@ def run_list(ledger: Ledger, args: argparse.Namespace) -> None:
         )
 
 
-def run_summary(ledger: Ledger) -> None:
+def run_summary(ledger: Ledger, args: argparse.Namespace) -> None:
     """Print per-category totals and the grand total."""
-    totals = ledger.summary()
+    from_date, to_date = resolve_date_range(args.from_date, args.to_date, args.month)
+    totals = ledger.summary(from_date=from_date, to_date=to_date)
     if not totals:
         print("No expenses recorded.")
         return
@@ -139,7 +148,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.command == "list":
             run_list(ledger, args)
         else:
-            run_summary(ledger)
+            run_summary(ledger, args)
     except TallyError as error:
         print(error.render(), file=sys.stderr)
         return 1

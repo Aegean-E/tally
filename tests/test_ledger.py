@@ -97,6 +97,38 @@ class LedgerTests(unittest.TestCase):
         self.ledger.remove(4)
         self.assertEqual(self.ledger.add(900, "food", "", "2026-10-20").id, 4)
 
+    def test_entries_filter_by_date_range(self):
+        self.ledger.add(100, "general", "september", "2026-09-30")
+        self.ledger.add(200, "general", "early october", "2026-10-05")
+        self.ledger.add(300, "general", "mid october", "2026-10-15")
+        self.ledger.add(400, "general", "november", "2026-11-01")
+
+        october = self.ledger.entries(from_date="2026-10-01", to_date="2026-10-31")
+        self.assertEqual([e.note for e in october], ["early october", "mid october"])
+
+        from_mid_oct = self.ledger.entries(from_date="2026-10-15")
+        self.assertEqual([e.note for e in from_mid_oct], ["mid october", "november"])
+
+        up_to_early_oct = self.ledger.entries(to_date="2026-10-05")
+        self.assertEqual([e.note for e in up_to_early_oct], ["september", "early october"])
+
+    def test_entries_filter_by_category_and_date_range(self):
+        self.ledger.add(100, "food", "lunch", "2026-10-05")
+        self.ledger.add(200, "transport", "bus", "2026-10-05")
+        self.ledger.add(300, "food", "dinner", "2026-11-01")
+
+        filtered = self.ledger.entries(category="food", from_date="2026-10-01", to_date="2026-10-31")
+        self.assertEqual([e.note for e in filtered], ["lunch"])
+
+    def test_summary_filters_by_date_range(self):
+        self.ledger.add(1000, "food", "lunch", "2026-10-05")
+        self.ledger.add(500, "transport", "bus", "2026-10-06")
+        self.ledger.add(2000, "food", "dinner", "2026-11-01")
+
+        october_summary = self.ledger.summary(from_date="2026-10-01", to_date="2026-10-31")
+        self.assertEqual(october_summary, {"food": 1000, "transport": 500})
+        self.assertEqual(self.ledger.total(from_date="2026-10-01", to_date="2026-10-31"), 1500)
+
 
 if __name__ == "__main__":
     unittest.main()

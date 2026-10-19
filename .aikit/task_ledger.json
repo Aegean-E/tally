@@ -1,12 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-tally-edit-remove-v1",
+    "task_id": "task-tally-date-filter-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792433156.6298876,
-    "completed_at": 1792433193.3164907
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792440122.1390877
   },
   "checkpoints": [
     {
@@ -133,6 +132,32 @@
       "status": "completed",
       "timestamp": 1792433193.3164923,
       "timestamp_str": "2026-10-19 21:06:33"
+    },
+    {
+      "task_id": "task-tally-date-filter-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Models and ledger: parse_month, date range validation, Ledger.entries and Ledger.summary with date filters; failing-first tests for month parsing, range bounds and filtered queries; [2/4] CLI: --from, --to, --month options for list and summary, triad error paths and CLI tests; [3/4] Docs and memory: README commands and examples, ADR-004, refreshed codebase map; [4/4] Phase 4 delivery triad: gates, commit verification, push and task completion",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792439763.3416398,
+      "timestamp_str": "2026-10-19 22:56:03",
+      "impact_assessment": {
+        "why": "Enable time-bounded expense tracking so users can list and summarize expenses by month or date range instead of only all-time history",
+        "benefits": "Users can filter list and summary with --from, --to, or --month, with exact date validation, bounds checks, and friendly triad errors",
+        "risks": "contract: optional flags added to list and summary commands, ledger schema is unchanged; dependency: none (calendar and datetime stdlib only); concurrency: read-only operations on existing store; state: no schema migration needed",
+        "mitigation": "failing-first unit and CLI tests covering month parsing, date bounds, conflict combinations, and filtered totals; full Phase 4 gate verification"
+      }
+    },
+    {
+      "task_id": "task-tally-date-filter-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/4]-[3/4] complete: parse_month, resolve_date_range, date-bounded Ledger.entries and summary, CLI --from/--to/--month options with triad errors; 16 new tests (63 total); ADR-004, README, refreshed map. Phase 4: tests 63/63; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792440122.1390877,
+      "timestamp_str": "2026-10-19 23:02:02"
     }
   ]
 }

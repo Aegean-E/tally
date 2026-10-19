@@ -41,6 +41,8 @@ and see where the money went. Everything stays in one readable JSON file on your
   malformed file is quarantined and the backup is restored.
 - **One writer at a time.** Read-modify-write operations hold an advisory `.lock` with a 3-second
   wait; a lock older than 30 seconds is broken.
+- **Date and month filtering.** `list` and `summary` accept `--month YYYY-MM` or `--from` and `--to`
+  to view and total spending within specific periods.
 - **Clear failures.** Every user error prints `Error:`, `Why:` and `Fix:`, and exits 1.
 
 ### Commands
@@ -49,8 +51,8 @@ and see where the money went. Everything stays in one readable JSON file on your
 python -m tally [--db PATH] add AMOUNT [--category NAME] [--note TEXT] [--date YYYY-MM-DD]
 python -m tally [--db PATH] edit ID [--amount AMOUNT] [--category NAME] [--note TEXT] [--date YYYY-MM-DD]
 python -m tally [--db PATH] remove ID
-python -m tally [--db PATH] list [--category NAME]
-python -m tally [--db PATH] summary
+python -m tally [--db PATH] list [--category NAME] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--month YYYY-MM]
+python -m tally [--db PATH] summary [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--month YYYY-MM]
 ```
 
 ## 📦 What's Inside

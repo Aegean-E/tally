@@ -1,9 +1,10 @@
 """Expense value objects and money/date parsing shared by storage and the CLI."""
 
+import calendar
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Tuple
 
 from tally.errors import TallyError
 
@@ -148,3 +149,49 @@ def parse_id(text: str) -> int:
             "run `tally list` and pass the number after '#'.",
         )
     return value
+
+
+def parse_month(text: str) -> str:
+    """Validate a month in YYYY-MM format, returning canonical YYYY-MM."""
+    try:
+        stripped = text.strip()
+        parts = stripped.split("-")
+        if len(parts) != 2 or len(parts[0]) != 4 or len(parts[1]) != 2:
+            raise ValueError("expected YYYY-MM")
+        date.fromisoformat(f"{stripped}-01")
+        return stripped
+    except (ValueError, AttributeError) as exc:
+        raise TallyError(
+            f"'{text}' is not a valid month.",
+            "months are specified in ISO format as YYYY-MM, e.g. 2026-10.",
+            "pass a month such as '--month 2026-10'.",
+        ) from exc
+
+
+def resolve_date_range(
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    month: Optional[str] = None,
+) -> Tuple[Optional[str], Optional[str]]:
+    """Validate and resolve --from, --to and --month into an ISO (start_date, end_date) pair."""
+    if month is not None and (from_date is not None or to_date is not None):
+        raise TallyError(
+            "Cannot combine --month with --from or --to.",
+            "a month filter already specifies a complete date boundary.",
+            "use either --month or --from/--to, not both.",
+        )
+    if month is not None:
+        parsed_month = parse_month(month)
+        year, m = int(parsed_month[:4]), int(parsed_month[5:7])
+        _, last_day = calendar.monthrange(year, m)
+        return f"{parsed_month}-01", f"{parsed_month}-{last_day:02d}"
+
+    parsed_from = parse_date(from_date) if from_date is not None else None
+    parsed_to = parse_date(to_date) if to_date is not None else None
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise TallyError(
+            f"Start date '{parsed_from}' is after end date '{parsed_to}'.",
+            "the start of a date range cannot be later than the end.",
+            "ensure --from is earlier than or equal to --to.",
+        )
+    return parsed_from, parsed_to

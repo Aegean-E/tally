@@ -142,5 +142,69 @@ class CliTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, 2)
 
 
+    def test_list_filter_by_month(self):
+        self.run_cli("add", "10.00", "--date", "2026-09-30", "--note", "sept")
+        self.run_cli("add", "20.00", "--date", "2026-10-15", "--note", "oct")
+        self.run_cli("add", "30.00", "--date", "2026-11-01", "--note", "nov")
+        code, output, _ = self.run_cli("list", "--month", "2026-10")
+        self.assertEqual(code, 0)
+        self.assertIn("oct", output)
+        self.assertNotIn("sept", output)
+        self.assertNotIn("nov", output)
+
+    def test_list_filter_by_date_range(self):
+        self.run_cli("add", "10.00", "--date", "2026-10-01", "--note", "early-item")
+        self.run_cli("add", "20.00", "--date", "2026-10-10", "--note", "mid-item")
+        self.run_cli("add", "30.00", "--date", "2026-10-20", "--note", "late-item")
+        code, output, _ = self.run_cli("list", "--from", "2026-10-05", "--to", "2026-10-15")
+        self.assertEqual(code, 0)
+        self.assertIn("mid-item", output)
+        self.assertNotIn("early-item", output)
+        self.assertNotIn("late-item", output)
+
+    def test_summary_filter_by_month(self):
+        self.run_cli("add", "10.00", "--category", "food", "--date", "2026-09-30")
+        self.run_cli("add", "25.00", "--category", "food", "--date", "2026-10-15")
+        self.run_cli("add", "15.00", "--category", "transport", "--date", "2026-10-20")
+        self.run_cli("add", "40.00", "--category", "food", "--date", "2026-11-01")
+        code, output, _ = self.run_cli("summary", "--month", "2026-10")
+        self.assertEqual(code, 0)
+        self.assertIn("food", output)
+        self.assertIn("25.00", output)
+        self.assertIn("transport", output)
+        self.assertIn("15.00", output)
+        self.assertIn("40.00", output)  # total
+
+    def test_summary_filter_by_date_range(self):
+        self.run_cli("add", "10.00", "--category", "food", "--date", "2026-10-01")
+        self.run_cli("add", "25.00", "--category", "food", "--date", "2026-10-10")
+        self.run_cli("add", "30.00", "--category", "food", "--date", "2026-10-25")
+        code, output, _ = self.run_cli("summary", "--from", "2026-10-05", "--to", "2026-10-15")
+        self.assertEqual(code, 0)
+        self.assertIn("25.00", output)
+        self.assertNotIn("65.00", output)
+
+    def test_list_month_conflict_reports_why_and_fix(self):
+        code, _, error = self.run_cli("list", "--month", "2026-10", "--from", "2026-10-01")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_summary_start_after_end_reports_why_and_fix(self):
+        code, _, error = self.run_cli("summary", "--from", "2026-10-20", "--to", "2026-10-10")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+    def test_list_invalid_month_reports_why_and_fix(self):
+        code, _, error = self.run_cli("list", "--month", "bad-month")
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", error)
+        self.assertIn("Why:", error)
+        self.assertIn("Fix:", error)
+
+
 if __name__ == "__main__":
     unittest.main()

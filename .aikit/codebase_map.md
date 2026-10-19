@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
-- **Total Classes**: `10`
-- **Total Top-Level Functions**: `13`
-- **Total Class Methods**: `77`
-- **Total Source Lines**: `1084`
+- **Total Classes**: `12`
+- **Total Top-Level Functions**: `15`
+- **Total Class Methods**: `93`
+- **Total Source Lines**: `1312`
 
 ---
 
@@ -33,7 +33,7 @@
 ### [`tally/cli.py`](tally/cli.py)
 > *Command-line interface: `add`, `list` and `summary` over one ledger file.*
 
-**Size**: `146` lines (`5597` bytes)
+**Size**: `155` lines (`6482` bytes)
 
 **Functions:**
 - `def build_parser()` - *The command grammar; `--db` selects the ledger file for every command.*
@@ -41,7 +41,7 @@
 - `def run_edit(ledger, args)` - *Apply the given fields and echo the updated expense.*
 - `def run_remove(ledger, args)` - *Delete one expense and echo what was removed.*
 - `def run_list(ledger, args)` - *Print one line per expense, or say the ledger is empty.*
-- `def run_summary(ledger)` - *Print per-category totals and the grand total.*
+- `def run_summary(ledger, args)` - *Print per-category totals and the grand total.*
 - `def main(argv)` - *Run one command; user errors print the Why/Fix triad and exit 1.*
 
 ---
@@ -61,7 +61,7 @@
 ### [`tally/ledger.py`](tally/ledger.py)
 > *Expense operations: the one place that assigns ids and computes category totals.*
 
-**Size**: `98` lines (`4026` bytes)
+**Size**: `115` lines (`4658` bytes)
 
 **Classes:**
 - `class Ledger` - *Add and read expenses through a `StateStore`; it owns no storage logic itself.*
@@ -70,16 +70,16 @@
   - Method `.edit(expense_id, amount_cents, category, note, spent_on)` - *Change the given fields of one expense, keeping every other field.*
   - Method `.remove(expense_id)` - *Delete one expense and return it.*
   - Method `._missing(expense_id)` - *The triad for an id the ledger does not contain.*
-  - Method `.entries(category)` - *Every expense, oldest first, optionally narrowed to one normalized category.*
-  - Method `.summary()` - *Total cents per category, with categories in alphabetical order.*
-  - Method `.total()` - *Total cents across every category.*
+  - Method `.entries(category, from_date, to_date)` - *Every expense, oldest first, optionally narrowed to one category or date range.*
+  - Method `.summary(from_date, to_date)` - *Total cents per category, with categories in alphabetical order.*
+  - Method `.total(from_date, to_date)` - *Total cents across every category in the given date range.*
 
 ---
 
 ### [`tally/models.py`](tally/models.py)
 > *Expense value objects and money/date parsing shared by storage and the CLI.*
 
-**Size**: `150` lines (`5537` bytes)
+**Size**: `197` lines (`7560` bytes)
 
 **Classes:**
 - `class Expense` - *One recorded expense; money is integer cents so no float rounding can drift.*
@@ -93,6 +93,8 @@
 - `def normalize_note(text)` - *Trim a note and refuse one that would dwarf a ledger line.*
 - `def parse_date(text)` - *Validate an ISO date and return it unchanged, so stored dates sort lexically.*
 - `def parse_id(text)` - *Convert an expense id such as `3` to a positive integer.*
+- `def parse_month(text)` - *Validate a month in YYYY-MM format, returning canonical YYYY-MM.*
+- `def resolve_date_range(from_date, to_date, month)` - *Validate and resolve --from, --to and --month into an ISO (start_date, end_date) pair.*
 
 ---
 
@@ -129,7 +131,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *End-to-end tests of the command-line interface through `main`.*
 
-**Size**: `146` lines (`5309` bytes)
+**Size**: `210` lines (`8458` bytes)
 
 **Classes:**
 - `class CliTests`
@@ -147,13 +149,20 @@
   - Method `.test_remove_missing_id_reports_why_and_fix()`
   - Method `.test_invalid_amount_reports_why_and_fix()`
   - Method `.test_missing_command_is_argument_misuse()`
+  - Method `.test_list_filter_by_month()`
+  - Method `.test_list_filter_by_date_range()`
+  - Method `.test_summary_filter_by_month()`
+  - Method `.test_summary_filter_by_date_range()`
+  - Method `.test_list_month_conflict_reports_why_and_fix()`
+  - Method `.test_summary_start_after_end_reports_why_and_fix()`
+  - Method `.test_list_invalid_month_reports_why_and_fix()`
 
 ---
 
 ### [`tests/test_ledger.py`](tests/test_ledger.py)
 > *Tests for the ledger operations on top of the state store.*
 
-**Size**: `102` lines (`4495` bytes)
+**Size**: `134` lines (`6220` bytes)
 
 **Classes:**
 - `class LedgerTests`
@@ -171,13 +180,16 @@
   - Method `.test_remove_drops_only_the_named_id()`
   - Method `.test_remove_missing_id_changes_nothing()`
   - Method `.test_next_id_follows_the_highest_remaining_entry()`
+  - Method `.test_entries_filter_by_date_range()`
+  - Method `.test_entries_filter_by_category_and_date_range()`
+  - Method `.test_summary_filters_by_date_range()`
 
 ---
 
 ### [`tests/test_models.py`](tests/test_models.py)
 > *Tests for money, date and category parsing.*
 
-**Size**: `72` lines (`2175` bytes)
+**Size**: `131` lines (`4248` bytes)
 
 **Classes:**
 - `class AmountTests`
@@ -195,6 +207,14 @@
   - Method `.test_note_is_trimmed()`
   - Method `.test_iso_date_is_kept()`
   - Method `.test_invalid_date_is_refused()`
+- `class MonthTests`
+  - Method `.test_parses_iso_month()`
+  - Method `.test_rejects_invalid_months()`
+- `class DateRangeTests`
+  - Method `.test_resolve_date_range_month()`
+  - Method `.test_resolve_date_range_from_to()`
+  - Method `.test_resolve_date_range_from_after_to()`
+  - Method `.test_resolve_date_range_month_conflict()`
 
 ---
 
