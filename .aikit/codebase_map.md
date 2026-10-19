@@ -8,8 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
 - **Total Classes**: `9`
-- **Total Functions / Methods**: `10`
-- **Total Source Lines**: `766`
+- **Total Top-Level Functions**: `10`
+- **Total Class Methods**: `56`
+- **Total Source Lines**: `812`
 
 ---
 
@@ -92,7 +93,7 @@
 ### [`tally/storage.py`](tally/storage.py)
 > *Crash-resilient JSON storage for the ledger (PRINCIPLE-013).*
 
-**Size**: `223` lines (`9307` bytes)
+**Size**: `231` lines (`9844` bytes)
 
 **Classes:**
 - `class StateStore` - *The ledger file, its backup and its lock, addressed by one path.*
@@ -104,7 +105,7 @@
   - Method `._read_backup()` - *The parsed backup, or None when it is absent or unreadable.*
   - Method `._decode(data)` - *Validate the document envelope and rebuild every expense.*
   - Method `._save(expenses)` - *Write the ledger atomically, keeping the previous version as a backup.*
-  - Method `._replace(temp_path)` - *Replace the ledger, retrying briefly for transient sharing violations on Windows.*
+  - Method `._replace(temp_path)` - *Replace the ledger, retrying only transient sharing violations on Windows (ADR-002).*
   - Method `._fsync_directory(directory)` - *Flush the directory entry on POSIX; Windows cannot fsync a directory handle.*
   - Method `._quarantine()` - *Move a corrupt ledger aside so it can neither block reads nor be overwritten.*
   - Method `._lock()` - *Hold the advisory lock file for one read-modify-write.*
@@ -175,7 +176,7 @@
 ### [`tests/test_storage.py`](tests/test_storage.py)
 > *Fault-injection tests for the atomic ledger store (PRINCIPLE-013).*
 
-**Size**: `75` lines (`2839` bytes)
+**Size**: `113` lines (`4665` bytes)
 
 **Classes:**
 - `class StoreFaultTests`
@@ -187,5 +188,9 @@
   - Method `.test_unknown_version_is_refused_in_place()`
   - Method `.test_insufficient_disk_space_writes_nothing()`
   - Method `.test_concurrent_writers_lose_no_entries()`
+  - Method `.test_replace_does_not_retry_a_non_transient_error()`
+  - Method `.test_replace_retries_a_permission_error_then_succeeds()`
+  - Method `.test_fsync_directory_failure_is_reported()`
+  - Method `.test_backup_failure_is_reported_and_the_write_continues()`
 
 ---

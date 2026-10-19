@@ -1,12 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-tally-bootstrap-v1",
+    "task_id": "task-tally-durability-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792390686.1598752,
-    "completed_at": 1792390690.7302673
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792432702.3338165
   },
   "checkpoints": [
     {
@@ -63,6 +62,32 @@
       "status": "completed",
       "timestamp": 1792390690.730269,
       "timestamp_str": "2026-10-19 09:18:10"
+    },
+    {
+      "task_id": "task-tally-durability-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Fix the three hygiene findings in storage.py; retry os.replace only on PermissionError with exponential backoff; warn when the backup copy or directory fsync fails; failing-first tests for each failure path; [2/3] regenerate .aikit/codebase_map.md, record ADR-002, update README if behaviour text changes; [3/3] run all four Phase 4 gates, smoke-test add/list/summary, commit and push",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432624.4829118,
+      "timestamp_str": "2026-10-19 20:57:04",
+      "impact_assessment": {
+        "why": "Tally fails the kit's current Phase 4 gates (hygiene, stale map) and its storage loop predates ADR-146, so continuing from a red baseline would mix new work with old drift",
+        "benefits": "every gate passes again; a non-transient replace failure is reported at once instead of after five sleeps; a failed backup or directory fsync is announced instead of silently dropped",
+        "risks": "contract: storage behaviour changes only in failure paths, the ledger schema is untouched; dependency: none; concurrency: lock ordering and stale-break rules are unchanged; state: no migration",
+        "mitigation": "failing-first tests pin retry scope and warning paths; a full gate run plus add/list/summary smoke test before the commit; no unrelated file edited"
+      }
+    },
+    {
+      "task_id": "task-tally-durability-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/3]+[2/3] complete: three silent excepts gone, os.replace retries PermissionError only with backoff, backup/fsync failures warn; four failing-first tests pin the failure paths; ADR-002, README and map refreshed. Phase 4: tests 29/29; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432702.3338165,
+      "timestamp_str": "2026-10-19 20:58:22"
     }
   ]
 }

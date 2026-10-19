@@ -1,13 +1,17 @@
 """Fault-injection tests for the atomic ledger store (PRINCIPLE-013)."""
 
+import errno
+import io
 import json
 import shutil
 import tempfile
 import threading
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 
+from tally import storage
 from tally.errors import TallyError
 from tally.models import Expense
 from tally.storage import StateStore
@@ -69,6 +73,40 @@ class StoreFaultTests(unittest.TestCase):
         for thread in threads:
             thread.join()
         self.assertEqual(len(self.store.read()), 8)
+
+    def test_replace_does_not_retry_a_non_transient_error(self):
+        with mock.patch("tally.storage.os.replace",
+                        side_effect=OSError(errno.ENOSPC, "No space left on device")) as replace:
+            with mock.patch("tally.storage.time.sleep"):
+                with self.assertRaises(TallyError):
+                    self.store._replace(self.temp_dir / "temp.json")
+        self.assertEqual(replace.call_count, 1)
+
+    def test_replace_retries_a_permission_error_then_succeeds(self):
+        with mock.patch("tally.storage.os.replace",
+                        side_effect=[PermissionError("busy"), PermissionError("busy"), None]) as replace:
+            with mock.patch("tally.storage.time.sleep"):
+                self.store._replace(self.temp_dir / "temp.json")
+        self.assertEqual(replace.call_count, 3)
+
+    def test_fsync_directory_failure_is_reported(self):
+        error = io.StringIO()
+        with mock.patch.object(storage.os, "name", "posix"):
+            with mock.patch("tally.storage.os.open", side_effect=OSError("unsupported")):
+                with redirect_stderr(error):
+                    self.store._fsync_directory(self.temp_dir)
+        self.assertIn("[WARN]", error.getvalue())
+        self.assertIn("Could not fsync directory", error.getvalue())
+
+    def test_backup_failure_is_reported_and_the_write_continues(self):
+        self._write([])
+        error = io.StringIO()
+        with mock.patch("tally.storage.shutil.copy2", side_effect=OSError("denied")):
+            with redirect_stderr(error):
+                self._write([])
+        self.assertIn("[WARN]", error.getvalue())
+        self.assertIn("backup", error.getvalue())
+        self.assertEqual(self.store.read(), [])
 
 
 if __name__ == "__main__":

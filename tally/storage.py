@@ -130,26 +130,37 @@ class StateStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             if self.path.exists():
-                shutil.copy2(self.path, self.backup_path)
+                try:
+                    shutil.copy2(self.path, self.backup_path)
+                except OSError as exc:
+                    print(
+                        f"[WARN] Could not write backup {self.backup_path.name}: {exc}",
+                        file=sys.stderr,
+                    )
             self._replace(temp_path)
             self._fsync_directory(self.path.parent)
         finally:
             temp_path.unlink(missing_ok=True)
 
     def _replace(self, temp_path: Path) -> None:
-        """Replace the ledger, retrying briefly for transient sharing violations on Windows."""
+        """Replace the ledger, retrying only transient sharing violations on Windows (ADR-002)."""
         last_error: Optional[OSError] = None
-        for _ in range(REPLACE_ATTEMPTS):
+        for attempt in range(REPLACE_ATTEMPTS):
             try:
                 os.replace(temp_path, self.path)
                 return
+            except PermissionError as exc:
+                last_error = exc
+                if attempt < REPLACE_ATTEMPTS - 1:
+                    time.sleep(0.02 * (2 ** attempt))
             except OSError as exc:
                 last_error = exc
-                time.sleep(0.02)
+                break
         raise TallyError(
             f"Could not replace {self.path}: {last_error}",
-            "another program may hold the ledger open.",
-            "close the program and try again; the previous ledger is still intact.",
+            "another program may hold the ledger open, or the disk may be full or read-only.",
+            "close programs using the file, check free space and permissions, then retry; "
+            "the previous ledger is still intact.",
         )
 
     @staticmethod
@@ -160,8 +171,8 @@ class StateStore:
         try:
             with closing(os.open(str(directory), os.O_RDONLY)) as descriptor:  # hygiene: allow raw directory descriptor closed by closing()
                 os.fsync(descriptor)
-        except OSError:
-            pass
+        except OSError as exc:
+            print(f"[WARN] Could not fsync directory {directory}: {exc}", file=sys.stderr)
 
     def _quarantine(self) -> None:
         """Move a corrupt ledger aside so it can neither block reads nor be overwritten."""
@@ -201,10 +212,7 @@ class StateStore:
         try:
             yield
         finally:
-            try:
-                self.lock_path.unlink()
-            except FileNotFoundError:
-                pass
+            self.lock_path.unlink(missing_ok=True)
 
     def _break_stale_lock(self) -> None:
         """Break a lock older than 30 seconds by atomically renaming it aside."""
@@ -220,4 +228,4 @@ class StateStore:
         try:
             os.replace(self.lock_path, stale)
         except FileNotFoundError:
-            pass
+            return

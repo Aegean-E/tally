@@ -18,3 +18,21 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   whole ledger is held in memory per command, which is fine at personal-ledger scale but would need
   a different store for very large histories. Categories are free-form lowercase labels, so typos
   create separate categories rather than being rejected.
+
+### ADR-002: Retry only sharing violations, and announce every degraded durability step
+- **Date**: 2026-10-19
+- **Status**: Accepted
+- **Context**: The bootstrap retried every `OSError` from `os.replace` five times, so a full or
+  read-only disk paid five sleeps before reporting the real cause, and a failed backup copy or
+  POSIX directory fsync was discarded without a trace. AIKit's ADR-146 narrowed the same retry
+  loop in the kit's own state writer.
+- **Decision**: `os.replace` is retried only on `PermissionError`, with 20ms exponential backoff
+  over five attempts; any other `OSError` is reported at once as a `TallyError` with the
+  Error/Why/Fix triad. A failed `.bak` copy or directory fsync prints one `[WARN]` naming the path
+  and the write continues, because the replacement already happened. Lock cleanup tolerates a lock
+  that vanished while it was held, and breaking a stale lock that another process already removed
+  is a no-op.
+- **Consequences**: Transient Windows sharing violations still succeed, while ENOSPC and
+  read-only failures surface immediately. A ledger can survive without a fresh backup or a
+  directory barrier, but the operator sees the warning. The JSON schema, lock protocol and
+  shutdown behaviour are unchanged.

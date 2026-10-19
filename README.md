@@ -32,7 +32,9 @@ and see where the money went. Everything stays in one readable JSON file on your
 - **Money is integer cents.** Amounts are parsed with `Decimal`, never floats, so totals stay exact.
 - **One ledger file.** `tally.json` (or `--db <path>`) holds `{"version": 1, "expenses": [...]}`.
 - **Crash-safe writes.** Each save keeps a `.bak`, writes a temporary file, fsyncs it, then
-  replaces the ledger atomically. A malformed file is quarantined and the backup is restored.
+  replaces the ledger atomically. A transient Windows sharing violation is retried; any other
+  replace failure is reported at once. A failed backup or directory fsync prints a warning. A
+  malformed file is quarantined and the backup is restored.
 - **One writer at a time.** Read-modify-write operations hold an advisory `.lock` with a 3-second
   wait; a lock older than 30 seconds is broken.
 - **Clear failures.** Every user error prints `Error:`, `Why:` and `Fix:`, and exits 1.
