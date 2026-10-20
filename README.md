@@ -61,6 +61,7 @@ python -m tally [--db PATH] summary [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--mon
 tally/
 ├── .aikit/                   <- this project's memory: record, ledger, decisions
 ├── .gitignore                <- transient AIKit state and local ledgers excluded
+├── LICENSE
 ├── README.md
 ├── pyproject.toml            <- package metadata and the `tally` console script
 ├── tally/
