@@ -1,5 +1,7 @@
 # tally
 
+[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
+
 A dependency-free, local-first expense ledger for the terminal. Record what you spend, list it,
 and see where the money went. Everything stays in one readable JSON file on your machine.
 
